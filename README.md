@@ -1,7 +1,7 @@
 # Niagara 风格现场设备模拟器（Modbus TCP + 实时监控面板 + 自动测试）
 
 [![CI](https://github.com/garyguorui-tech/Webuild-IoT-Simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/garyguorui-tech/Webuild-IoT-Simulator/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg)](LICENSE)
+[![License: PolyForm NC](https://img.shields.io/badge/License-PolyForm%20Noncommercial-orange.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 
 为工业设备物联网场景打造的基础脚手架，模拟 Tridium / Niagara 现场驱动常用的
@@ -468,4 +468,8 @@ collector: [PS-01] connected
 
 ## 10. 许可证
 
-本项目采用 [MIT License](LICENSE) 开源，可自由用于商业/非商业用途。
+本项目采用 [PolyForm Noncommercial License 1.0.0](LICENSE)。
+
+- ✅ **非商业用途免费**：个人学习、研究实验、教学、非营利组织等可自由使用、修改、分发。
+- ⛔ **商业用途需单独授权**：任何商业用途（含作为付费产品/托管服务的一部分）必须先获得作者书面授权。
+- 商业授权请联系作者：[@garyguorui-tech](https://github.com/garyguorui-tech)。
