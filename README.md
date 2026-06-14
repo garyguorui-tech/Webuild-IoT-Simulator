@@ -1,5 +1,9 @@
 # Niagara 风格现场设备模拟器（Modbus TCP + 实时监控面板 + 自动测试）
 
+[![CI](https://github.com/garyguorui-tech/Webuild-IoT-Simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/garyguorui-tech/Webuild-IoT-Simulator/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-amber.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+
 为工业设备物联网场景打造的基础脚手架，模拟 Tridium / Niagara 现场驱动常用的
 **Modbus TCP** 协议设备，配套**自动连接采集客户端**、**多设备实时 Web 监控面板（HMI）**
 与**完整 pytest 测试套件**。点位表用 YAML 配置，增删点位/设备无需改代码；
@@ -39,7 +43,7 @@
 | **多设备总览 + 实时 HMI** | 内置空调机组/冷水机组/水泵站三台设备。Flask 后端桥接多台 Modbus，浏览器经 SSE 实时刷新；总览页统一展示在线/报警/KPI，点击下钻单设备详情（趋势曲线/指示灯/写命令）。 |
 | **数据集构建器（ML 训练数据）** | 后台持续记录时间对齐多变量样本；研究员界面按设备/特征筛选并**逐变量查看历史趋势图**，**数据来源可切内存/磁盘（完整历史跨天跨周回看）**，可选时间范围/降采样、**滑窗特征**(7种统计量)、自动合成标签(全局+按设备故障)、**自动切分 train/val/test**，导出 ZIP / **Parquet** / CSV（含元数据 + pandas 示例），供物理 AI 建模（节能/控制/故障诊断/多任务）。 |
 | **自动连接客户端** | 启动即连接、周期轮询全部点位并打印（可选落 CSV / 转发 MQTT），**断线自动指数退避重连**。 |
-| **自动测试** | pytest 覆盖连接性、数据正确性、读写回环、断线重连、轮询压力、Web 接口、设备群配置、数据集构建/标签/滑窗/划分/Parquet，**53 个用例全绿**。 |
+| **自动测试** | pytest 覆盖连接性、数据正确性、读写回环、断线重连、轮询压力、Web 接口、设备群配置、数据集构建/标签/滑窗/划分/Parquet，**57 个用例全绿**。 |
 | **可扩展** | 仿真引擎与协议解耦；`simulator/bacnet_server.py` 提供 BACnet/IP（可选 bacpypes3），`client/mqtt_sink.py` 提供 MQTT/InfluxDB 落库。 |
 
 模拟的设备是一台空调机组 **AHU-01**，点位包含送风/回风/室外温度、冷冻水阀开度与流量、
@@ -75,7 +79,7 @@ niagara-field-sim/
 ├── web/                     # 实时监控面板（HMI）
 │   ├── app.py               # Flask 后端：多设备 DataHub→内存→REST/SSE + 数据集导出
 │   └── static/              # overview.* 总览 / device.* 详情 / dataset.* 数据集构建器 / app.js / style.css
-├── tests/                   # pytest 测试套件（42 用例）
+├── tests/                   # pytest 测试套件（57 用例）
 │   ├── conftest.py          # 夹具：后台线程内启动真实模拟器供测试连接
 │   ├── test_config.py       # 配置加载 / 点位编解码 / 设备群加载
 │   ├── test_connectivity.py # 连接性
@@ -236,7 +240,7 @@ X = df[[c for c in df.columns if not c.startswith("label_")]]    # 含 __mean/__
 ### 4.8 运行测试
 
 ```bash
-pytest                              # 全部 48 用例
+pytest                              # 全部 57 用例
 pytest tests/test_web_api.py -v     # 只跑 Web 接口（含数据集构建/标签/Parquet）
 ```
 
@@ -459,3 +463,9 @@ collector: [PS-01] connected
   均已实现，`run_collector.py` 把二者串成采集器；也可作为 `poll_forever(on_readings=...)` 回调。
 - **更多协议**：实现新的 `*_server.py`，提供 `write_func(point, raw)` 回调即可接入引擎。
 - **更多标签/特征工程**：在 `recorder.py` 的 `_build` 里加按设备故障标签、滑窗特征、异常分数等。
+
+---
+
+## 10. 许可证
+
+本项目采用 [MIT License](LICENSE) 开源，可自由用于商业/非商业用途。
