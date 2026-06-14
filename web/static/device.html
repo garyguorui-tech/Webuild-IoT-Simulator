@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>设备详情 · Field Device HMI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="rail">
+    <div class="rail__id">
+      <a class="rail__back" href="/">← 设备群总览</a>
+      <h1 class="rail__device" id="deviceName">— — —</h1>
+      <span class="rail__sub" id="deviceLink">Modbus TCP</span>
+    </div>
+    <div class="rail__metrics">
+      <div class="metric"><span class="metric__k">POLL</span><span class="metric__v" id="pollRate">—</span></div>
+      <div class="metric"><span class="metric__k">POINTS</span><span class="metric__v" id="pointCount">—</span></div>
+      <div class="metric"><span class="metric__k">UPTIME</span><span class="metric__v" id="uptime">00:00</span></div>
+      <div class="link" id="linkState" data-up="false">
+        <span class="link__lamp"></span><span class="link__txt">LINK DOWN</span>
+      </div>
+      <time class="clock" id="clock">--:--:--</time>
+    </div>
+  </header>
+
+  <main class="board">
+    <section class="zone">
+      <div class="zone__head">
+        <h2>模拟量仪表 · ANALOG</h2>
+        <span class="zone__rule"></span>
+        <span class="zone__note">holding / input registers — 实时趋势</span>
+      </div>
+      <div class="instruments" id="analogGrid"></div>
+    </section>
+
+    <section class="zone">
+      <div class="zone__head">
+        <h2>状态与命令 · DISCRETE</h2>
+        <span class="zone__rule"></span>
+        <span class="zone__note">coils / discrete inputs — 指示灯与开关</span>
+      </div>
+      <div class="lamps" id="bitGrid"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span id="footStatus">连接中…</span>
+    <span class="foot__sep"></span>
+    <span>Niagara 风格现场驱动模拟器 · HMI</span>
+  </footer>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

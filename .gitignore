@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+*.csv
+.pytest_cache/
+readings.csv
+
+# 记录器历史数据（运行产物）
+data/recordings/

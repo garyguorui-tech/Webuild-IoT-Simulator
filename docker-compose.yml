@@ -1,0 +1,114 @@
+# =============================================================================
+# 工业 IoT 整链路演示栈
+#
+#   fieldsim ──Modbus TCP──> collector ──┬──> InfluxDB ──> Grafana(可视化)
+#   (3台模拟器+面板)                       └──> EMQX(MQTT broker)
+#
+# 一键启动:   docker compose up -d --build
+# 访问:
+#   - 设备群监控面板(自带):  http://localhost:8000
+#   - Grafana 时序看板:      http://localhost:3000        (admin/admin，已开匿名只读)
+#   - EMQX Dashboard:        http://localhost:18083       (admin/public)
+#   - InfluxDB UI:           http://localhost:8086        (admin/admin12345)
+#
+# Token/密码仅供本地演示，生产请改 .env。
+# =============================================================================
+
+x-influx-token: &influx_token ${INFLUX_TOKEN:-field-demo-token-0123456789}
+
+services:
+  # ---- 现场设备模拟器 + 自带监控面板 ------------------------------------
+  fieldsim:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: niagara-fieldsim:latest
+    container_name: fieldsim
+    command: >
+      python run_fleet.py --web-host 0.0.0.0 --web-port 8000 --modbus-bind 0.0.0.0
+    ports:
+      - "8000:8000"      # 自带监控面板
+      - "1502:1502"      # 各设备 Modbus（也可被外部 Niagara/modpoll 连接）
+      - "1503:1503"
+      - "1504:1504"
+    networks: [fieldnet]
+    restart: unless-stopped
+
+  # ---- 采集器：Modbus -> InfluxDB + MQTT --------------------------------
+  collector:
+    image: niagara-fieldsim:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: collector
+    command: python -m client.run_collector
+    environment:
+      MODBUS_HOST: fieldsim
+      POLL_INTERVAL: "2"
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: *influx_token
+      INFLUX_ORG: ${INFLUX_ORG:-acme}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-field}
+      MQTT_HOST: emqx
+      MQTT_PORT: "1883"
+      MQTT_TOPIC_PREFIX: field
+    depends_on: [fieldsim, influxdb, emqx]
+    networks: [fieldnet]
+    restart: unless-stopped
+
+  # ---- EMQX：MQTT broker ------------------------------------------------
+  emqx:
+    image: emqx/emqx:5.8
+    container_name: emqx
+    ports:
+      - "1883:1883"      # MQTT
+      - "18083:18083"    # EMQX Dashboard
+    networks: [fieldnet]
+    restart: unless-stopped
+
+  # ---- InfluxDB v2：时序库 ----------------------------------------------
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: admin12345
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUX_ORG:-acme}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUX_BUCKET:-field}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: *influx_token
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    networks: [fieldnet]
+    restart: unless-stopped
+
+  # ---- Grafana：可视化 --------------------------------------------------
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      # 供数据源 provisioning 注入 token
+      INFLUX_TOKEN: *influx_token
+      INFLUX_ORG: ${INFLUX_ORG:-acme}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:-field}
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on: [influxdb]
+    networks: [fieldnet]
+    restart: unless-stopped
+
+volumes:
+  influxdb-data:
+
+networks:
+  fieldnet:
+    driver: bridge

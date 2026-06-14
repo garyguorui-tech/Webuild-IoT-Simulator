@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数据集构建器 · Dataset Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="rail">
+    <div class="rail__id">
+      <a class="rail__back" href="/">← 设备群总览</a>
+      <h1 class="rail__device">数据集构建器</h1>
+      <span class="rail__sub">为物理 AI 训练筛选 / 打标 / 导出数据</span>
+    </div>
+    <div class="rail__metrics">
+      <div class="metric"><span class="metric__k">REC</span><span class="metric__v" id="recState">—</span></div>
+      <div class="metric"><span class="metric__k">已采样</span><span class="metric__v" id="recRows">—</span></div>
+      <div class="metric"><span class="metric__k">可导出时长</span><span class="metric__v" id="recSpan">—</span></div>
+      <time class="clock" id="clock">--:--:--</time>
+    </div>
+  </header>
+
+  <main class="board board--builder">
+    <!-- 左：选择 -->
+    <div class="builder__main">
+      <!-- 1. 设备与特征 -->
+      <section class="zone">
+        <div class="zone__head">
+          <h2>1 · 选择设备与特征</h2>
+          <span class="zone__rule"></span>
+          <div class="zone__tools">
+            <button class="chip" data-filter="all">全部</button>
+            <button class="chip" data-filter="analog">仅模拟量</button>
+            <button class="chip" data-filter="bit">仅开关量</button>
+            <span class="zone__tools-sep"></span>
+            <button class="chip" id="selAll">全选</button>
+            <button class="chip" id="selNone">清空</button>
+          </div>
+        </div>
+        <div class="feat" id="featGrid"></div>
+      </section>
+
+      <!-- 历史趋势：每个所选变量的时间序列小图 -->
+      <section class="zone">
+        <div class="zone__head">
+          <h2>历史趋势 · TREND</h2>
+          <span class="zone__rule"></span>
+          <div class="zone__tools">
+            <span class="zone__note" id="trendNote">—</span>
+            <div class="seg seg--mini" id="trendRangeSeg">
+              <button data-min="30">30 分</button>
+              <button data-min="360">6 时</button>
+              <button data-min="1440">1 天</button>
+              <button data-min="10080">1 周</button>
+              <button data-min="" class="on">全部</button>
+            </div>
+            <button class="chip" id="btnTrend">刷新</button>
+          </div>
+        </div>
+        <div class="trend" id="trendGrid"></div>
+      </section>
+
+      <!-- 2. 数据来源与时间范围 -->
+      <section class="zone">
+        <div class="zone__head">
+          <h2>2 · 数据来源与时间范围</h2><span class="zone__rule"></span>
+        </div>
+        <div class="ds-field">
+          <label>数据来源 <span class="ds-srcnote" id="srcNote"></span></label>
+          <div class="seg" id="srcSeg">
+            <button data-src="memory" class="on">内存（近期，快）</button>
+            <button data-src="disk">磁盘（完整历史，跨天/跨周）</button>
+          </div>
+        </div>
+        <div class="ds-field">
+          <label>时间范围</label>
+          <div class="seg" id="rangeSeg">
+            <button data-min="15" class="on">15 分钟</button>
+            <button data-min="60">1 小时</button>
+            <button data-min="360">6 小时</button>
+            <button data-min="1440">1 天</button>
+            <button data-min="10080">1 周</button>
+            <button data-min="">全部</button>
+          </div>
+        </div>
+        <div class="ds-field">
+          <label>降采样（每 N 个样本取 1，减小数据量）</label>
+          <div class="seg" id="dsSeg">
+            <button data-ds="1" class="on">原始 ×1</button>
+            <button data-ds="2">×2</button>
+            <button data-ds="5">×5</button>
+            <button data-ds="10">×10</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 标签与格式 -->
+      <section class="zone">
+        <div class="zone__head">
+          <h2>3 · 标签与格式</h2><span class="zone__rule"></span>
+        </div>
+        <div class="ds-field">
+          <label>自动合成标签（用于监督学习，无需手工打标）</label>
+          <div class="checks">
+            <label class="check"><input type="checkbox" id="lblAlarm" checked>
+              <span><b>label_alarm</b> 故障标签 · 任一报警点激活=1</span></label>
+            <label class="check"><input type="checkbox" id="lblOOR">
+              <span><b>label_out_of_range</b> 越限异常 · 任一模拟量超量程=1</span></label>
+            <label class="check"><input type="checkbox" id="lblPerDev">
+              <span><b>label_fault__&lt;设备&gt;</b> 按设备分别出故障标签 · 多设备多任务学习</span></label>
+          </div>
+        </div>
+        <div class="ds-field">
+          <label>滑窗特征（对每个模拟量附加滑窗统计列，省去预处理）</label>
+          <div class="seg" id="winSeg">
+            <button data-win="0" class="on">关闭</button>
+            <button data-win="5">窗口 5</button>
+            <button data-win="10">窗口 10</button>
+            <button data-win="20">窗口 20</button>
+          </div>
+          <div class="seg seg--stats" id="winStatsSeg" hidden>
+            <button data-stat="mean" class="on">mean</button>
+            <button data-stat="std" class="on">std</button>
+            <button data-stat="diff" class="on">diff</button>
+            <button data-stat="min">min</button>
+            <button data-stat="max">max</button>
+            <button data-stat="slope">slope</button>
+            <button data-stat="range">range</button>
+          </div>
+        </div>
+        <div class="ds-field">
+          <label>数据集划分（仅 ZIP，按时间顺序分 train/val/test 目录）</label>
+          <div class="seg" id="splitSeg">
+            <button data-split="" class="on">不划分</button>
+            <button data-split="70/15/15">70 / 15 / 15</button>
+            <button data-split="80/10/10">80 / 10 / 10</button>
+            <button data-split="60/20/20">60 / 20 / 20</button>
+          </div>
+        </div>
+        <div class="ds-field">
+          <label>导出格式</label>
+          <div class="seg" id="fmtSeg">
+            <button data-fmt="zip" class="on">ZIP 包（全部+元数据+README）</button>
+            <button data-fmt="parquet">Parquet（推荐大数据集）</button>
+            <button data-fmt="wide">宽表 CSV</button>
+            <button data-fmt="long">长表 CSV</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 右：摘要 + 预览 + 导出 -->
+    <aside class="builder__side">
+      <div class="summary">
+        <h3>数据集摘要</h3>
+        <div class="summary__row"><span>已选特征列</span><b id="sumFeat">—</b></div>
+        <div class="summary__row"><span>标签列</span><b id="sumLabels">—</b></div>
+        <div class="summary__row"><span>预计样本行</span><b id="sumRows">—</b></div>
+        <div class="summary__row"><span>有效间隔</span><b id="sumInterval">—</b></div>
+        <div class="summary__row"><span>划分</span><b id="sumSplit">不划分</b></div>
+        <div class="summary__row"><span>格式</span><b id="sumFmt">ZIP</b></div>
+        <div class="summary__actions">
+          <button class="btn-ghost" id="btnPreview">预览</button>
+          <button class="btn-export" id="btnExport">⬇ 导出数据集</button>
+        </div>
+        <div class="summary__hint" id="buildHint"></div>
+      </div>
+
+      <div class="preview" id="previewBox" hidden>
+        <h3>预览（前若干行）</h3>
+        <div class="preview__scroll"><table id="previewTable"></table></div>
+      </div>
+
+      <div class="loader">
+        <h3>加载到训练代码</h3>
+        <pre class="ds-code">import pandas as pd
+df = pd.read_parquet("dataset_wide.parquet")
+# 或 df = pd.read_csv("dataset_wide.csv",
+#        parse_dates=["timestamp_iso"])
+y = df["label_alarm"]
+X = df[[c for c in df.columns
+        if not c.startswith("label_")]]</pre>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="foot">
+    <span id="footStatus">采集中…</span>
+    <span class="foot__sep"></span>
+    <span>Niagara 风格现场驱动模拟器 · Dataset Builder</span>
+  </footer>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="/static/dataset.js"></script>
+</body>
+</html>

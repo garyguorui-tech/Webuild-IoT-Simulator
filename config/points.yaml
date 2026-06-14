@@ -1,0 +1,188 @@
+# =============================================================================
+# 点位配置 —— Niagara 风格现场设备模拟器
+#
+# 在此增删点位即可改变模拟器与客户端的行为，无需改代码。
+#
+# 字段说明:
+#   name          点位名（唯一，建议 snake_case，类似 Niagara point name）
+#   description   中文/英文描述
+#   register_type 寄存器类型: holding | input | coil | discrete
+#                   holding  -> Holding Register  (FC03 读 / FC06,16 写, 16bit)
+#                   input    -> Input Register    (FC04 读, 16bit, 只读)
+#                   coil     -> Coil              (FC01 读 / FC05,15 写, 1bit)
+#                   discrete -> Discrete Input    (FC02 读, 1bit, 只读)
+#   address       Modbus 协议地址（0 起始，PDU 地址）
+#   unit          工程单位（仅展示用）
+#   scale         工程值 -> 原始寄存器值 的倍率: raw = round(eng * scale)
+#                 仅对寄存器类点位有效，1 表示不缩放
+#   initial       初始工程值
+#   min / max     合理量程（客户端与测试用它做数据合理性校验）
+#   writable      是否允许客户端写（holding/coil 才可写）
+#   simulation    数据变化模式:
+#     mode: sine    正弦波动  -> amplitude(幅值), period(周期秒), noise(高斯噪声σ)
+#     mode: noise   随机游走  -> noise(每步高斯噪声σ)
+#     mode: step    阶跃/翻转 -> interval(秒);
+#                    寄存器点: values 列表循环阶跃; 开关点: 周期性翻转
+#     mode: static  恒定不变（可写点请用 static，模拟器不会覆盖客户端写入的值）
+# =============================================================================
+
+device:
+  name: AHU-01           # 模拟一台空调机组 (Air Handling Unit)
+  vendor: ACME-IoT
+  unit_id: 1             # Modbus unit / slave id
+
+modbus:
+  host: 127.0.0.1        # 模拟器监听地址（0.0.0.0 可对外）
+  port: 1502             # 默认用 1502 避免低端口权限问题；现场习惯 502
+
+# 客户端轮询参数
+polling:
+  interval: 2.0          # 轮询周期（秒）
+  timeout: 3.0           # 单次请求超时（秒）
+  reconnect_backoff: [1, 2, 5, 10]   # 断线重连退避序列（秒），到末尾后保持
+
+points:
+  # ---- Holding Registers (可读写, 16bit) ----
+  - name: supply_air_temp
+    description: 送风温度
+    register_type: holding
+    address: 0
+    unit: "degC"
+    scale: 10
+    initial: 22.5
+    min: 10.0
+    max: 35.0
+    writable: false
+    simulation: { mode: sine, amplitude: 3.0, period: 60, noise: 0.1 }
+
+  - name: chw_valve_position
+    description: 冷冻水阀开度
+    register_type: holding
+    address: 1
+    unit: "%"
+    scale: 10
+    initial: 45.0
+    min: 0.0
+    max: 100.0
+    writable: false
+    simulation: { mode: sine, amplitude: 20.0, period: 120, noise: 0.5 }
+
+  - name: temp_setpoint
+    description: 温度设定值（可写）
+    register_type: holding
+    address: 2
+    unit: "degC"
+    scale: 10
+    initial: 24.0
+    min: 16.0
+    max: 30.0
+    writable: true
+    simulation: { mode: static }
+
+  - name: fan_speed_cmd
+    description: 风机转速指令（可写）
+    register_type: holding
+    address: 3
+    unit: "%"
+    scale: 1
+    initial: 60
+    min: 0
+    max: 100
+    writable: true
+    simulation: { mode: static }
+
+  - name: duct_static_pressure
+    description: 风管静压
+    register_type: holding
+    address: 4
+    unit: "Pa"
+    scale: 1
+    initial: 350
+    min: 0
+    max: 800
+    writable: false
+    simulation: { mode: noise, noise: 5.0 }
+
+  # ---- Input Registers (只读, 16bit) ----
+  - name: return_air_temp
+    description: 回风温度
+    register_type: input
+    address: 0
+    unit: "degC"
+    scale: 10
+    initial: 25.0
+    min: 15.0
+    max: 35.0
+    simulation: { mode: sine, amplitude: 2.0, period: 90, noise: 0.1 }
+
+  - name: outdoor_air_temp
+    description: 室外温度
+    register_type: input
+    address: 1
+    unit: "degC"
+    scale: 10
+    initial: 30.0
+    min: -10.0
+    max: 45.0
+    simulation: { mode: sine, amplitude: 5.0, period: 300, noise: 0.2 }
+
+  - name: chw_flow
+    description: 冷冻水流量
+    register_type: input
+    address: 2
+    unit: "m3/h"
+    scale: 100
+    initial: 12.5
+    min: 0.0
+    max: 50.0
+    simulation: { mode: noise, noise: 0.3 }
+
+  - name: filter_diff_pressure
+    description: 过滤器压差（阶跃模拟堵塞过程）
+    register_type: input
+    address: 3
+    unit: "Pa"
+    scale: 1
+    initial: 80
+    min: 0
+    max: 500
+    simulation: { mode: step, interval: 20, values: [80, 120, 180, 260, 80] }
+
+  # ---- Coils (可读写, 1bit) ----
+  - name: fan_enable
+    description: 风机启停命令（可写）
+    register_type: coil
+    address: 0
+    initial: 1
+    writable: true
+    simulation: { mode: static }
+
+  - name: alarm_reset
+    description: 报警复位命令（可写）
+    register_type: coil
+    address: 1
+    initial: 0
+    writable: true
+    simulation: { mode: static }
+
+  # ---- Discrete Inputs (只读, 1bit) ----
+  - name: fan_status
+    description: 风机运行状态反馈
+    register_type: discrete
+    address: 0
+    initial: 1
+    simulation: { mode: static }
+
+  - name: filter_alarm
+    description: 过滤器堵塞报警（周期翻转便于观察）
+    register_type: discrete
+    address: 1
+    initial: 0
+    simulation: { mode: step, interval: 30 }
+
+  - name: pump_status
+    description: 水泵运行状态
+    register_type: discrete
+    address: 2
+    initial: 1
+    simulation: { mode: static }

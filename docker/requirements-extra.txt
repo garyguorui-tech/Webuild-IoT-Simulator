@@ -1,0 +1,4 @@
+# 仅 Docker 整链路镜像额外需要的依赖（落库/转发/数据集导出）
+influxdb-client>=1.40
+paho-mqtt>=2.0
+pyarrow>=14.0          # 数据集 Parquet 导出

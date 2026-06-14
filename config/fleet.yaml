@@ -1,0 +1,23 @@
+# 设备群配置 —— 多设备总览面板用
+#
+# 列出要同时模拟/监控的设备。每台设备引用一份独立点表，各占一个 Modbus 端口。
+# 增删设备只改这里：加一条 devices 项、指向一份点表 yaml、给个不冲突的端口即可。
+#
+#   name    设备显示名（需与点表里的 device.name 一致）
+#   config  该设备的点表 yaml 路径（相对项目根）
+#   port    该设备模拟器监听的 Modbus TCP 端口
+#   type    设备类型标签（仅总览页分类展示用）
+
+devices:
+  - name: AHU-01
+    config: config/points.yaml
+    port: 1502
+    type: 空调机组 AHU
+  - name: CH-01
+    config: config/chiller.yaml
+    port: 1503
+    type: 冷水机组 Chiller
+  - name: PS-01
+    config: config/pump.yaml
+    port: 1504
+    type: 水泵站 Pump

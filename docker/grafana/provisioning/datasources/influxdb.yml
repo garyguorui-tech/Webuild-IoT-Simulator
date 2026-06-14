@@ -1,0 +1,17 @@
+# Grafana 自动配置 InfluxDB 数据源（token/org/bucket 从容器环境变量注入）
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    uid: influxdb
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: true
+    jsonData:
+      version: Flux
+      organization: $INFLUX_ORG
+      defaultBucket: $INFLUX_BUCKET
+      tlsSkipVerify: true
+    secureJsonData:
+      token: $INFLUX_TOKEN

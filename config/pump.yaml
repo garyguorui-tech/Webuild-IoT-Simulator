@@ -1,0 +1,106 @@
+# 冷冻水泵站 PS-01 点表（字段含义见 points.yaml 顶部注释）
+device:
+  name: PS-01
+  vendor: ACME-IoT
+  unit_id: 1
+modbus:
+  host: 127.0.0.1
+  port: 1504
+polling:
+  interval: 2.0
+  timeout: 3.0
+  reconnect_backoff: [1, 2, 5, 10]
+
+points:
+  # Holding registers
+  - name: speed_setpoint
+    description: 变频器转速设定（可写）
+    register_type: holding
+    address: 0
+    unit: "%"
+    scale: 1
+    initial: 70
+    min: 0
+    max: 100
+    writable: true
+    simulation: { mode: static }
+  - name: pump1_pressure
+    description: 1#泵出口压力
+    register_type: holding
+    address: 1
+    unit: "kPa"
+    scale: 1
+    initial: 420
+    min: 0
+    max: 800
+    writable: false
+    simulation: { mode: noise, noise: 6 }
+  - name: pump2_pressure
+    description: 2#泵出口压力
+    register_type: holding
+    address: 2
+    unit: "kPa"
+    scale: 1
+    initial: 415
+    min: 0
+    max: 800
+    writable: false
+    simulation: { mode: noise, noise: 6 }
+
+  # Input registers
+  - name: header_pressure
+    description: 母管压力
+    register_type: input
+    address: 0
+    unit: "kPa"
+    scale: 1
+    initial: 400
+    min: 0
+    max: 700
+    simulation: { mode: sine, amplitude: 30, period: 70, noise: 2 }
+  - name: flow_total
+    description: 总流量
+    register_type: input
+    address: 1
+    unit: "m3/h"
+    scale: 10
+    initial: 240.0
+    min: 0.0
+    max: 400.0
+    simulation: { mode: sine, amplitude: 30, period: 130, noise: 1.5 }
+
+  # Coils
+  - name: pump1_run_cmd
+    description: 1#泵启停命令（可写）
+    register_type: coil
+    address: 0
+    initial: 1
+    writable: true
+    simulation: { mode: static }
+  - name: pump2_run_cmd
+    description: 2#泵启停命令（可写）
+    register_type: coil
+    address: 1
+    initial: 0
+    writable: true
+    simulation: { mode: static }
+
+  # Discrete inputs
+  - name: pump1_status
+    description: 1#泵运行状态
+    register_type: discrete
+    address: 0
+    initial: 1
+    simulation: { mode: static }
+  - name: pump2_status
+    description: 2#泵运行状态
+    register_type: discrete
+    address: 1
+    initial: 0
+    simulation: { mode: static }
+  - name: low_water_alarm
+    description: 低水位报警（周期触发便于观察）
+    register_type: discrete
+    address: 2
+    initial: 0
+    simulation: { mode: step, interval: 40 }

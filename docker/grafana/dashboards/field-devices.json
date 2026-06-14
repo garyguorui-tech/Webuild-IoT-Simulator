@@ -1,0 +1,99 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "tags": ["field", "modbus", "iot"],
+  "title": "现场设备时序看板 · Field Devices",
+  "time": { "from": "now-15m", "to": "now" },
+  "refresh": "5s",
+  "templating": {
+    "list": [
+      {
+        "name": "device",
+        "label": "设备",
+        "type": "custom",
+        "query": "AHU-01,CH-01,PS-01",
+        "current": { "text": "AHU-01", "value": "AHU-01" },
+        "options": [
+          { "text": "AHU-01", "value": "AHU-01", "selected": true },
+          { "text": "CH-01", "value": "CH-01", "selected": false },
+          { "text": "PS-01", "value": "PS-01", "selected": false }
+        ]
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "模拟量趋势 · $device",
+      "type": "timeseries",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 11, "w": 18, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 8, "showPoints": "never" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["last", "max", "min"] },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb" },
+          "query": "from(bucket: \"field\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"field_point\")\n  |> filter(fn: (r) => r._field == \"value\")\n  |> filter(fn: (r) => r.device == \"$device\")\n  |> filter(fn: (r) => r.type == \"holding\" or r.type == \"input\")\n  |> keep(columns: [\"_time\", \"_value\", \"point\"])\n  |> group(columns: [\"point\"])"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "最新值 · $device",
+      "type": "stat",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 11, "w": 6, "x": 18, "y": 0 },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "text", "value": null } ] } },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "horizontal", "colorMode": "value", "graphMode": "area", "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb" },
+          "query": "from(bucket: \"field\")\n  |> range(start: -5m)\n  |> filter(fn: (r) => r._measurement == \"field_point\")\n  |> filter(fn: (r) => r._field == \"value\")\n  |> filter(fn: (r) => r.device == \"$device\")\n  |> last()\n  |> keep(columns: [\"_value\", \"point\"])\n  |> group()"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "开关量状态 · $device",
+      "type": "state-timeline",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 11 },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 80, "lineWidth": 0 },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "OFF", "color": "dark-red" } } },
+            { "type": "value", "options": { "1": { "text": "ON", "color": "green" } } }
+          ]
+        },
+        "overrides": []
+      },
+      "options": { "showValue": "auto", "mergeValues": true },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb" },
+          "query": "from(bucket: \"field\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"field_point\")\n  |> filter(fn: (r) => r._field == \"value\")\n  |> filter(fn: (r) => r.device == \"$device\")\n  |> filter(fn: (r) => r.type == \"coil\" or r.type == \"discrete\")\n  |> keep(columns: [\"_time\", \"_value\", \"point\"])\n  |> group(columns: [\"point\"])"
+        }
+      ]
+    }
+  ]
+}

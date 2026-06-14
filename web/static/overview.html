@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>设备群总览 · Fleet Overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="rail">
+    <div class="rail__id">
+      <span class="rail__tag">FLEET OVERVIEW</span>
+      <h1 class="rail__device">设备群总览</h1>
+      <span class="rail__sub">Niagara 风格现场驱动模拟器</span>
+    </div>
+    <div class="rail__metrics">
+      <div class="metric"><span class="metric__k">DEVICES</span><span class="metric__v" id="devCount">—</span></div>
+      <div class="metric"><span class="metric__k">ONLINE</span><span class="metric__v" id="onlineCount">—</span></div>
+      <div class="metric"><span class="metric__k">ALARMS</span><span class="metric__v" id="alarmCount">—</span></div>
+      <a class="rail__cta" href="/dataset">⬇ 数据采集</a>
+      <time class="clock" id="clock">--:--:--</time>
+    </div>
+  </header>
+
+  <main class="board">
+    <section class="zone">
+      <div class="zone__head">
+        <h2>在线设备 · DEVICES</h2>
+        <span class="zone__rule"></span>
+        <span class="zone__note">点击任一设备进入实时详情</span>
+      </div>
+      <div class="fleet" id="fleetGrid"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span id="footStatus">连接中…</span>
+    <span class="foot__sep"></span>
+    <span>多设备 Modbus TCP 监控</span>
+  </footer>
+
+  <script src="/static/overview.js"></script>
+</body>
+</html>

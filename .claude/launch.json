@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hmi-demo",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["run_demo.py", "--web-port", "8000", "--modbus-port", "1502"],
+      "port": 8000
+    }
+  ]
+}

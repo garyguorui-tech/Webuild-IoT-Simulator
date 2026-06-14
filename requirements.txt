@@ -1,0 +1,34 @@
+# 核心依赖 ---------------------------------------------------------------
+# Modbus TCP 服务端 + 客户端。
+# 固定 3.9.x：3.10+ 重构了 datastore（ModbusSlaveContext -> ModbusDeviceContext，
+# 引入 SimData），本项目的服务端实现针对 3.9 的经典 API。
+pymodbus==3.9.2
+
+# YAML 点表配置解析
+PyYAML>=6.0
+
+# Web 实时监控面板（web/app.py）
+Flask>=3.0
+
+# 测试框架
+pytest>=7.4
+
+# 可选依赖 ---------------------------------------------------------------
+# 取消注释并安装以启用对应功能；缺失不影响核心 Modbus + Web 功能。
+
+# BACnet/IP 扩展（simulator/bacnet_server.py，--bacnet 启用）。已实测 0.0.106 可用。
+# bacpypes3>=0.0.98
+
+# MQTT 转发/落库（client/mqtt_sink.py，客户端 --mqtt 启用）
+# paho-mqtt>=2.0
+
+# InfluxDB 时序库落库（client/influx_sink.py，Docker 整链路用）
+# influxdb-client>=1.40
+
+# 数据集 Parquet 导出（数据集构建器，未装则仅 CSV/ZIP 可用）
+# pyarrow>=14.0
+# 注：Docker 整链路（docker-compose.yml）所需的 influxdb-client / paho-mqtt
+# 已在 docker/requirements-extra.txt 里随镜像安装，无需手动装。
+
+# 仅开发期：用于给监控面板生成截图（tools/screenshot.py）
+# playwright>=1.40    # 装后需执行: python -m playwright install chromium
